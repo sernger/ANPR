@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#
+# -*- coding: UTF-8 -*-
 # Copyright (c) 2016 Matthew Earl
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -31,7 +31,7 @@ __all__ = (
     'train',
 )
 
-
+from ipdb import set_trace
 import functools
 import glob
 import itertools
@@ -39,7 +39,8 @@ import multiprocessing
 import random
 import sys
 import time
-
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import cv2
 import numpy
 import tensorflow as tf
@@ -63,8 +64,8 @@ def code_to_vec(p, code):
 def read_data(img_glob):
     for fname in sorted(glob.glob(img_glob)):
         im = cv2.imread(fname)[:, :, 0].astype(numpy.float32) / 255.
-        code = fname.split("/")[1][9:16]
-        p = fname.split("/")[1][17] == '1'
+        code = fname.split("/")[1].decode('utf8')[9:16]
+        p = fname.split("/")[1].decode('utf8')[17] == '1'
         yield im, code_to_vec(p, code)
 
 
@@ -200,22 +201,37 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
                             numpy.all(r[0] == r[1], axis=1),
                             numpy.logical_and(r[2] < 0.5,
                                               r[3] < 0.5)))
-        r_short = (r[0][:190], r[1][:190], r[2][:190], r[3][:190])
-        for b, c, pb, pc in zip(*r_short):
-            print "{} {} <-> {} {}".format(vec_to_plate(c), pc,
-                                           vec_to_plate(b), float(pb))
+        recall = numpy.sum(numpy.logical_and(numpy.all(r[0] == r[1], axis=1) , r[3] > 0.5))
+        end = 300
+        r_short = (r[0][:end], r[1][:end], r[2][:end], r[3][:end])
+        #set_trace()
+        for i,v in enumerate(zip(*r_short)):
+            print "{} {} {} <-> {} {}".format(i, vec_to_plate(v[1]), v[3],
+                                           vec_to_plate(v[0]), float(v[2]))
         num_p_correct = numpy.sum(r[2] == r[3])
 
-        print ("B{:3d} {:2.02f}% {:02.02f}% loss: {} "
+        error_str = ""
+        for i, v in enumerate(zip(*r_short)):
+            if v[2] !=  v[3]:
+                error_str += "{}:(presence) ".format(i)
+            elif not numpy.array_equal(v[0], v[1]) and v[3] > 0.5:
+                error_letters = v[0] != v[1]                
+                for b,c in zip(v[0][error_letters], v[1][error_letters]):
+                    error_str += "{}:{}->{} ".format(i, common.CHARS[c], common.CHARS[b])
+        print ("B{:3d} num:{:2.02f}% recall:{:2.02f}% presence:{:02.02f}% loss: {} "
                "(digits: {}, presence: {}) |{}|").format(
             batch_idx,
             100. * num_correct / (len(r[0])),
+            100. * recall / numpy.sum(r[3] > 0.5),
             100. * num_p_correct / len(r[2]),
-            r[6],
-            r[4],
-            r[5],
-            "".join("X "[numpy.array_equal(b, c) or (not pb and not pc)]
-                                           for b, c, pb, pc in zip(*r_short)))
+            r[6]/len(r[0]),
+            r[4]/len(r[0]),
+            r[5]/len(r[0]),
+            error_str)
+#            "".join("X "[numpy.array_equal(v[0], v[1]) or (not v[2] and not v[3])]
+#                                           for i, v in enumerate(zip(*r_short))))
+#            " ".join(str(i) for i, v in enumerate(zip(*r_short)) 
+#                    if not(numpy.array_equal(v[0], v[1]) or (not v[2] and not v[3]))))
 
     def do_batch():
         sess.run(train_step,
@@ -229,7 +245,7 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
         if initial_weights is not None:
             sess.run(assign_ops)
 
-        test_xs, test_ys = unzip(list(read_data("test/*.png"))[:50])
+        test_xs, test_ys = unzip(list(read_data("test/*.png"))[:300])
 
         try:
             last_batch_idx = 0
@@ -261,7 +277,7 @@ if __name__ == "__main__":
         initial_weights = None
 
     train(learn_rate=0.001,
-          report_steps=20,
+          report_steps=100,
           batch_size=50,
           initial_weights=initial_weights)
 

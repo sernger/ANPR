@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 # Copyright (c) 2016 Matthew Earl
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -27,16 +28,18 @@ __all__ = (
     'DIGITS',
     'LETTERS',
     'CHARS',
+    'PROVINCE',
     'sigmoid',
     'softmax',
 )
 
 import numpy
+DIGITS = u"0123456789"
+LETTERS = u"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+PROVINCES = u"京津冀晋蒙辽吉黑沪苏浙皖闽赣鲁豫鄂湘粤桂琼渝川黔滇藏陕甘青宁新"
+CHARS = PROVINCES + LETTERS + DIGITS
 
-
-DIGITS = "0123456789"
-LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-CHARS = LETTERS + DIGITS
+WINDOW_SHAPE = (128, 256)
 
 def softmax(a):
     exps = numpy.exp(a.astype(numpy.float64))

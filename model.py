@@ -37,7 +37,7 @@ import tensorflow as tf
 import common
 
 
-WINDOW_SHAPE = (64, 128)
+WINDOW_SHAPE = common.WINDOW_SHAPE
 
 
 # Utility functions
@@ -78,7 +78,8 @@ def convolutional_layers():
     b_conv1 = bias_variable([48])
     x_expanded = tf.expand_dims(x, 3)
     h_conv1 = tf.nn.relu(conv2d(x_expanded, W_conv1) + b_conv1)
-    h_pool1 = max_pool(h_conv1, ksize=(2, 2), stride=(2, 2))
+    h_pool1 = max_pool(h_conv1, ksize=(4, 4), stride=(4, 4))
+    
 
     # Second layer
     W_conv2 = weight_variable([5, 5, 48, 64])
@@ -110,12 +111,12 @@ def get_training_model():
 
     """
     x, conv_layer, conv_vars = convolutional_layers()
-    
+
     # Densely connected layer
-    W_fc1 = weight_variable([32 * 8 * 128, 2048])
+    W_fc1 = weight_variable([32*8*128, 2048])
     b_fc1 = bias_variable([2048])
 
-    conv_layer_flat = tf.reshape(conv_layer, [-1, 32 * 8 * 128])
+    conv_layer_flat = tf.reshape(conv_layer, [-1, 32*8*128])
     h_fc1 = tf.nn.relu(tf.matmul(conv_layer_flat, W_fc1) + b_fc1)
 
     # Output layer
