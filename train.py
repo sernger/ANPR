@@ -38,6 +38,7 @@ import itertools
 import multiprocessing
 import random
 import sys
+import signal
 import time
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -143,6 +144,7 @@ def get_loss(y, y_):
 
     return digits_loss, presence_loss, digits_loss + presence_loss
 
+global params
 
 def train(learn_rate, report_steps, batch_size, initial_weights=None):
     """
@@ -168,6 +170,7 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
         The learned network weights.
 
     """
+    global params
     x, y, params = model.get_training_model()
 
     y_ = tf.placeholder(tf.float32, [None, 7 * len(common.CHARS) + 1])
@@ -267,6 +270,14 @@ def train(learn_rate, report_steps, batch_size, initial_weights=None):
             numpy.savez("weights.npz", *last_weights)
             return last_weights
 
+
+def signal_handler(signal, frame):
+     print "got SIGTERM"
+     last_weights = [p.eval() for p in params]
+     numpy.savez("weights.npz", *last_weights)
+     sys.exit(0)
+
+signal.signal(signal.SIGTERM, signal_handler)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
