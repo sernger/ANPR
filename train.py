@@ -128,9 +128,9 @@ def get_loss(y, y_):
     # Calculate the loss from digits being incorrect.  Don't count loss from
     # digits that are in non-present plates.
     digits_loss = tf.nn.softmax_cross_entropy_with_logits(
-                                          labels = tf.reshape(y[:, 1:],
+                                          logits = tf.reshape(y[:, 1:],
                                                      [-1, len(common.CHARS)]),
-                                          logits = tf.reshape(y_[:, 1:],
+                                          labels = tf.reshape(y_[:, 1:],
                                                      [-1, len(common.CHARS)]))
     digits_loss = tf.reshape(digits_loss, [-1, 7])
     digits_loss = tf.reduce_sum(digits_loss, 1)
@@ -139,7 +139,7 @@ def get_loss(y, y_):
 
     # Calculate the loss from presence indicator being wrong.
     presence_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-                                                         labels = y[:, :1],  logits = y_[:, :1])
+                                                         logits = y[:, :1],  labels = y_[:, :1])
     presence_loss = 7 * tf.reduce_sum(presence_loss)
 
     return digits_loss, presence_loss, digits_loss + presence_loss
